@@ -1,0 +1,57 @@
+{
+  "private": true,
+  "name": "blochain_webrtc",
+  "version": "1.0.0",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "build": "preact build",
+    "serve": "sirv build --port 8080 --cors --single",
+    "dev": "preact watch",
+    "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
+    "test": "jest ./tests"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "extends": [
+      "preact",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "ignorePatterns": [
+      "build/"
+    ]
+  },
+  "dependencies": {
+    "preact": "^10.5.14",
+    "preact-render-to-string": "^5.1.19",
+    "preact-router": "^3.2.1",
+    "shortid": "^2.2.16",
+    "simple-peer": "^9.11.0",
+    "skynet-js": "^4.0.12-beta",
+    "webrtc-adapter": "^8.0.0"
+  },
+  "devDependencies": {
+    "@teamsupercell/typings-for-css-modules-loader": "^2.5.1",
+    "@types/enzyme": "^3.10.5",
+    "@types/jest": "^26.0.8",
+    "@types/shortid": "^0.0.29",
+    "@types/simple-peer": "^9.11.0",
+    "@typescript-eslint/eslint-plugin": "^2.34.0",
+    "@typescript-eslint/parser": "^2.25.0",
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-preact-pure": "^3.1.0",
+    "eslint": "^6.8.0",
+    "eslint-config-preact": "^1.1.4",
+    "jest": "^26.2.2",
+    "jest-preset-preact": "^4.0.2",
+    "preact-cli": "^3.2.2",
+    "sirv-cli": "^1.0.0-next.3",
+    "typescript": "^3.9.10"
+  },
+  "jest": {
+    "preset": "jest-preset-preact",
+    "setupFiles": [
+      "<rootDir>/tests/__mocks__/browserMocks.ts",
+      "<rootDir>/tests/__mocks__/setupTests.ts"
+    ]
+  }
+}
