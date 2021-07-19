@@ -1,6 +1,6 @@
 {
-  "name": "blochain_webrtc",
-  "short_name": "blochain_webrtc",
+  "name": "blockhain_webrtc",
+  "short_name": "blockhain_webrtc",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

@@ -3,10 +3,10 @@ import Peer from 'simple-peer'
 export default class VideoCall {
 
     peer: Peer.Instance | null = null
-    init = (stream: MediaStream | undefined, initiator: boolean) => {
+    init = (stream: MediaStream | undefined, initiator: boolean): Peer.Instance => {
         this.peer = new Peer({
-            initiator: initiator,
-            stream: stream,
+            initiator,
+            stream,
             trickle: false,
             // rec: 1000,
             config: {
@@ -19,7 +19,7 @@ export default class VideoCall {
         })
         return this.peer
     }
-    connect = (sdp: string) => {
+    connect = (sdp: string): void => {
         if (this.peer) {
             console.log("Executing signal for sdp")
             this.peer.signal(sdp)

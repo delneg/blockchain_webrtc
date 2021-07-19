@@ -4,7 +4,7 @@ import style from './style.css';
 import { getDisplayStream } from '../../helpers/media-access';
 import VideoCall from '../../helpers/simple-peer';
 import {ShareScreenIcon, MicOnIcon, MicOffIcon, CamOnIcon, CamOffIcon} from '../icons';
-import { SkynetClient, genKeyPairFromSeed, deriveChildSeed } from "skynet-js";
+import {SkynetClient, genKeyPairFromSeed, deriveChildSeed, KeyPair} from "skynet-js";
 import Peer from "simple-peer";
 const initiatorId = "-1";
 const calleeId = "-2";
@@ -26,20 +26,20 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
     // const [streamUrl, setStreamUrl] = useState<string>('');
     const [initiator, setInitiator] = useState<boolean>(false);
     const [peer, setPeer] = useState<Peer.Instance>();
-    const [full, setFull] = useState<boolean>(false);
+    const [full] = useState<boolean>(false);
     const [connecting, setConnecting] = useState<ConnectionState>("Begin");
     const [waiting, setWaiting] = useState<boolean>(true);
     const [micState, setMicState] = useState<boolean>(true);
     const [camState, setCamState] = useState<boolean>(true);
     const childSeed = deriveChildSeed(masterSeed, roomId);
-    const { publicKey, privateKey } = genKeyPairFromSeed(childSeed);
-    const [client, setClient] = useState<SkynetClient>(() =>{
+    const [{publicKey, privateKey}] = useState<KeyPair>(genKeyPairFromSeed(childSeed));
+    const [client] = useState<SkynetClient>(() =>{
         const c = new SkynetClient(portalUrl);
         console.log(`Got public key ${publicKey}, private key ${privateKey}, initialized client for ${portalUrl}`);
         return c;
     });
 
-    const [videoCall, setVideoCall] = useState<VideoCall>(new VideoCall());
+    const [videoCall] = useState<VideoCall>(new VideoCall());
 
 
     const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -63,7 +63,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
     }
 
 
-    const setAudioLocal = ():void => {
+    const setAudioLocal = (): void => {
         if (localStream && localStream.getAudioTracks().length > 0){
             localStream.getAudioTracks().forEach(track => {
                 track.enabled = !track.enabled;
@@ -72,7 +72,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
         setMicState(!micState);
     }
 
-    const setVideoLocal = ():void => {
+    const setVideoLocal = (): void => {
         if (localStream && localStream.getVideoTracks().length > 0){
             localStream.getVideoTracks().forEach(track => {
                 track.enabled = !track.enabled;
@@ -81,9 +81,9 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
         setCamState(!camState);
     }
 
-    const getDisplay = ():void => {
+    const getDisplay = (): void => {
         getDisplayStream().then(stream => {
-            stream.oninactive = () => {
+            stream.oninactive = (): void => {
                 if (peer && localStream){
                     peer.removeStream(localStream);
                 }
@@ -108,7 +108,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
     // gets called when this route is navigated to
     useEffect(() => {
         const timer = window.setInterval(() => {
-            console.debug("Executing timer, connecting - "+ connecting);
+            console.debug(`Executing timer, connecting - ${ connecting}`);
             if (connecting == "Connecting") {
                 const dataKey = initiator ? calleeId : initiatorId;
                 client.db.getJSON(publicKey, dataKey).then((data) => {
@@ -122,7 +122,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
                             if ((sdp.type === 'offer' && !initiator) || (sdp.type === 'answer' && initiator)) {
                                 console.log('Setting received sdp');
                                 console.debug(sdp);
-                                call(sdp);
+                                videoCall.connect(sdp);
                                 setConnecting("SetRemoteSdp")
                             }
                         }
@@ -138,46 +138,10 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
         return (): void => {
             clearInterval(timer);
         };
-    }, [connecting, initiator, client]);
+    }, [connecting, initiator, client, publicKey, videoCall]);
 
 
-    const enter = (roomId:string): void => {
-        console.log('Setting connecting to "Connecting"');
-        setConnecting("Connecting");
-        const peer = videoCall.init(
-            localStream,
-            initiator
-        );
-        console.log('Setting peer');
-        setPeer(peer);
-        peer.on('signal', data => {
-            const signal = {
-                desc: data
-            };
-            const dataKey = initiator ? initiatorId : calleeId;
-            console.log(`Will set 'signal' - for ${dataKey} for room ${roomId}`);
-            console.log(signal);
-            client.db.setJSON(privateKey, dataKey, signal)
-                .then(r => console.log('setJson signal ok'));
-        });
-        peer.on('stream', stream => {
-            console.log("Received remote stream")
-            if (remoteVideoRef.current) {
-                remoteVideoRef.current.srcObject = stream;
-            }
-            setConnecting("Connected");
-            setWaiting(false);
-        });
-        peer.on('error', function(err) {
-            console.log('Peer error');
-            console.error(err);
-        });
-        console.log('Exiting "enter"');
-    };
-    const call = (otherId:string): void => {
-        videoCall.connect(otherId);
-    };
-    const renderFull = ():string | undefined => {
+    const renderFull = (): string | undefined => {
         if (full) {
             return 'The room is full';
         }
@@ -194,17 +158,47 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
             getUserMedia().then(() => {
                 const dataKey = initiator ? initiatorId : calleeId;
                 console.log(`Will set 'joined' for ${dataKey} for room ${roomId}`);
-                client.db.setJSON(privateKey, dataKey, {'joined': true})
-                    .then(r => {
-                        console.log('setJson result for joined success, executing enter..');
-                        enter(roomId);
+                client.db.setJSON(privateKey, dataKey, {joined: true})
+                    .then(() => {
+                        console.log('setJson result for joined success..');
+                        console.log('Setting connecting to "Connecting"');
+                        setConnecting("Connecting");
+                        const peer = videoCall.init(
+                            localStream,
+                            initiator
+                        );
+                        console.log('Setting peer');
+                        setPeer(peer);
+                        peer.on('signal', data => {
+                            const signal = {
+                                desc: data
+                            };
+                            const dataKey = initiator ? initiatorId : calleeId;
+                            console.log(`Will set 'signal' - for ${dataKey} for room ${roomId}`);
+                            console.log(signal);
+                            client.db.setJSON(privateKey, dataKey, signal)
+                                .then(() => console.log('setJson signal ok'));
+                        });
+                        peer.on('stream', stream => {
+                            console.log("Received remote stream")
+                            if (remoteVideoRef.current) {
+                                remoteVideoRef.current.srcObject = stream;
+                            }
+                            setConnecting("Connected");
+                            setWaiting(false);
+                        });
+                        peer.on('error', (err) => {
+                            console.log('Peer error');
+                            console.error(err);
+                        });
+                        console.log('Exiting "enter"');
                     });
             });
         }).catch((error) => {
             console.error("Initial getJson error");
             console.error(error);
         })
-    },[initiator, client, roomId]);
+    },[initiator, client, roomId, privateKey, publicKey, localStream, videoCall]);
 
     return (
         <div class={style["video-wrapper"]}>
@@ -238,9 +232,9 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
                     onClick={setAudioLocal}>
                     {
                         micState ? (
-                            <MicOnIcon/>
+                            <MicOnIcon />
                         ):(
-                            <MicOffIcon/>
+                            <MicOffIcon />
                         )
                     }
                 </button>
@@ -250,9 +244,9 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
                     onClick={setVideoLocal}>
                     {
                         camState ?(
-                            <CamOnIcon/>
+                            <CamOnIcon />
                         ):(
-                            <CamOffIcon/>
+                            <CamOffIcon />
                         )
                     }
                 </button>

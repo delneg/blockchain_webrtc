@@ -8,10 +8,10 @@ const GoToRoomComponent: FunctionalComponent = () => {
     return (
         <div className={style["enter-room-container"]}>
             <form>
-                <input type="text" value={roomId} placeholder="Room id" onInput={(e ) => {
+                <input type="text" value={roomId} placeholder="Room id" onInput={(e ): void => {
                     const target = e.target as HTMLInputElement;
                     setRoomId(target.value);
-                }}/>
+                }} />
                 <Link href={`/${roomId}`}>
                     Enter
                 </Link>
