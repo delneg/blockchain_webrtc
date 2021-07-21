@@ -14,25 +14,28 @@ const portalUrl = "https://siasky.net"
 interface Props {
     roomId: string;
 }
-type ConnectionState = "Begin" | "Connecting" | "SetRemoteSdp" | "Connected"
+enum ConnectionState {
+    Begin,
+    Connecting,
+    SetRemoteSdp,
+    Connected
+}
 
 const Video: FunctionalComponent<Props> = (props: Props) => {
     const {roomId} = props;
 
-    // const [time, setTime] = useState<number>(Date.now());
-    // const [count, setCount] = useState<number>(0);
     const [localStream, setLocalStream] = useState<MediaStream>();
     // const [remoteStreamUrl, setRemoteStreamUrl] = useState<string>('');
     // const [streamUrl, setStreamUrl] = useState<string>('');
     const [initiator, setInitiator] = useState<boolean>(false);
     const [peer, setPeer] = useState<Peer.Instance>();
     const [full] = useState<boolean>(false);
-    const [connecting, setConnecting] = useState<ConnectionState>("Begin");
+    const [connecting, setConnecting] = useState<ConnectionState>(ConnectionState.Begin);
     const [waiting, setWaiting] = useState<boolean>(true);
     const [micState, setMicState] = useState<boolean>(true);
     const [camState, setCamState] = useState<boolean>(true);
     const childSeed = deriveChildSeed(masterSeed, roomId);
-    const [{publicKey, privateKey}] = useState<KeyPair>(genKeyPairFromSeed(childSeed));
+    const [{publicKey, privateKey}] = useState<KeyPair>(() => genKeyPairFromSeed(childSeed));
     const [client] = useState<SkynetClient>(() =>{
         const c = new SkynetClient(portalUrl);
         console.log(`Got public key ${publicKey}, private key ${privateKey}, initialized client for ${portalUrl}`);
@@ -109,7 +112,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
     useEffect(() => {
         const timer = window.setInterval(() => {
             console.debug(`Executing timer, connecting - ${ connecting}`);
-            if (connecting == "Connecting") {
+            if (connecting == ConnectionState.Connecting) {
                 const dataKey = initiator ? calleeId : initiatorId;
                 client.db.getJSON(publicKey, dataKey).then((data) => {
                     console.debug(`Timer json ok, data for ${dataKey}, we are ${initiator ? 'initiator' : 'callee'}`);
@@ -123,7 +126,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
                                 console.log('Setting received sdp');
                                 console.debug(sdp);
                                 videoCall.connect(sdp);
-                                setConnecting("SetRemoteSdp")
+                                setConnecting(ConnectionState.SetRemoteSdp)
                             }
                         }
                     }
@@ -162,7 +165,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
                     .then(() => {
                         console.log('setJson result for joined success..');
                         console.log('Setting connecting to "Connecting"');
-                        setConnecting("Connecting");
+                        setConnecting(ConnectionState.Connecting);
                         const peer = videoCall.init(
                             localStream,
                             initiator
@@ -184,7 +187,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
                             if (remoteVideoRef.current) {
                                 remoteVideoRef.current.srcObject = stream;
                             }
-                            setConnecting("Connected");
+                            setConnecting(ConnectionState.Connected);
                             setWaiting(false);
                         });
                         peer.on('error', (err) => {
@@ -213,7 +216,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
             <video
                 autoPlay
                 className={`${
-                    connecting != "Connected" || waiting ? 'hide' : ''
+                    connecting != ConnectionState.Connected || waiting ? 'hide' : ''
                 }`}
                 id={style.remoteVideo}
                 ref={remoteVideoRef}
@@ -254,7 +257,7 @@ const Video: FunctionalComponent<Props> = (props: Props) => {
 
 
 
-            {connecting == "Connecting" || connecting == "SetRemoteSdp" && (
+            {connecting == ConnectionState.Connecting || connecting == ConnectionState.SetRemoteSdp && (
                 <div class={style.status}>
                     <p>Establishing connection...</p>
                 </div>

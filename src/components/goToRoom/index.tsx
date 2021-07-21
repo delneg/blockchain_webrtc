@@ -12,9 +12,7 @@ const GoToRoomComponent: FunctionalComponent = () => {
                     const target = e.target as HTMLInputElement;
                     setRoomId(target.value);
                 }} />
-                <Link href={`/${roomId}`}>
-                    Enter
-                </Link>
+                <Link href={`/${roomId}`}>Enter</Link>
             </form>
         </div>
     );
