@@ -1,5 +1,5 @@
 declare namespace StyleCssNamespace {
-  export interface StyleCss {
+  export interface IStyleCss {
     "control-btn": string;
     controls: string;
     hide: string;
@@ -11,9 +11,9 @@ declare namespace StyleCssNamespace {
   }
 }
 
-declare const StyleCssModule: StyleCssNamespace.StyleCss & {
+declare const StyleCssModule: StyleCssNamespace.IStyleCss & {
   /** WARNING: Only available when `css-loader` is used without `style-loader` or `mini-css-extract-plugin` */
-  locals: StyleCssNamespace.StyleCss;
+  locals: StyleCssNamespace.IStyleCss;
 };
 
 export = StyleCssModule;

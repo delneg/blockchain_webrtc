@@ -1,6 +1,6 @@
 import { FunctionalComponent, h } from 'preact';
 import { Route, Router } from 'preact-router';
-import 'webrtc-adapter';
+import adapter from 'webrtc-adapter';
 
 import GoToRoomComponent from "../components/goToRoom";
 import NotFoundPage from '../components/notfound';

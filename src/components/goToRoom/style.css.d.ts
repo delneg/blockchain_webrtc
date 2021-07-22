@@ -1,12 +1,12 @@
 declare namespace StyleCssNamespace {
-  export interface StyleCss {
+  export interface IStyleCss {
     "enter-room-container": string;
   }
 }
 
-declare const StyleCssModule: StyleCssNamespace.StyleCss & {
+declare const StyleCssModule: StyleCssNamespace.IStyleCss & {
   /** WARNING: Only available when `css-loader` is used without `style-loader` or `mini-css-extract-plugin` */
-  locals: StyleCssNamespace.StyleCss;
+  locals: StyleCssNamespace.IStyleCss;
 };
 
 export = StyleCssModule;
